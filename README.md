@@ -2,6 +2,14 @@
 
 > 🎬✨ Fast, clean downloads with a modern WPF UI.
 
+# UI Presentation
+
+### Light Mode
+![alt text](images/light-mode.png)
+
+### Dark Mode
+![alt text](images/dark-mode.png)
+
 # Universal Video Downloader
 
 Universal Video Downloader is a Windows PowerShell 5.1 script with a modern WPF interface for saving videos from popular platforms. It auto-installs the yt-dlp engine for YouTube, Instagram, and Facebook, while providing direct API flows for TikTok and general media links. Built-in logging, status indicators, and a light/dark theme make downloads easy to monitor.
