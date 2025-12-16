@@ -66,8 +66,7 @@
 
         <!-- SECONDARY BUTTON STYLE -->
         <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
         </Style>
@@ -89,18 +88,18 @@
                     <Border Background="{DynamicResource PrimaryBrush}" CornerRadius="6" Width="30" Height="30" Margin="0,0,10,0">
                         <TextBlock Text="V" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="Universal Downloader" FontWeight="Bold" FontSize="18"
+                    <TextBlock Text="Universal Video Downloader" FontWeight="Bold" FontSize="18"
                                Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
                 </StackPanel>
                 <Button Name="ThemeToggleBtn" Content="Dark Mode" HorizontalAlignment="Right"
-                        Style="{StaticResource SecondaryButton}" FontSize="12"/>
+                        Style="{StaticResource SecondaryButton}" FontSize="12" Height="20" Width="70"/>
             </Grid>
         </Border>
 
         <!-- MAIN CONTENT -->
         <StackPanel Grid.Row="1" Margin="30,30,30,10">
 
-            <TextBlock Text="Paste Link (TikTok, YouTube, Insta, Facebook or Direct URL)"
+            <TextBlock Text="Paste Link (TikTok, YouTube, Instagram, Facebook or Direct URL)"
                        Foreground="{DynamicResource SubTextBrush}" Margin="0,0,0,8" FontWeight="SemiBold"/>
             <TextBox Name="InputUrl" FontSize="14" Height="40"/>
 
@@ -113,7 +112,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" Name="InputPath" IsReadOnly="True" FontSize="14" Height="40"/>
-                <Button Grid.Column="2" Name="BtnBrowse" Content="Browse..." Style="{StaticResource SecondaryButton}" Height="40"/>
+                <Button Grid.Column="2" Name="BtnBrowse" Content="Browse..." Style="{StaticResource SecondaryButton}" Height="20" Width="60"/>
             </Grid>
 
             <Button Name="BtnDownload" Content="Download Video" FontSize="16" FontWeight="Bold" Margin="0,30,0,0" Height="50"/>
@@ -141,8 +140,8 @@
                         <TextBlock Text="Activity Log" FontSize="12" FontWeight="SemiBold"
                                    Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
 
-                        <Button Grid.Column="1" Name="BtnCopyLog" Content="Copy" Style="{StaticResource SecondaryButton}" FontSize="12" Padding="10,4"/>
-                        <Button Grid.Column="3" Name="BtnClearLog" Content="Clear" Style="{StaticResource SecondaryButton}" FontSize="12" Padding="10,4"/>
+                        <Button Grid.Column="1" Name="BtnCopyLog" Content="Copy" Style="{StaticResource SecondaryButton}" FontSize="12" Padding="10,4" Width="50" Height="20"/>
+                        <Button Grid.Column="3" Name="BtnClearLog" Content="Clear" Style="{StaticResource SecondaryButton}" FontSize="12" Padding="10,4" Width="50" Height="20"/>
                     </Grid>
                 </Border>
 

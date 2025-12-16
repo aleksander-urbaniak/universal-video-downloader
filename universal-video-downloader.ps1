@@ -13,7 +13,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Net.Http
 
-$version = "v1.0.0"
+$version = "v1.0.1"
 $moduleRoot = Join-Path $PSScriptRoot "src"
 
 . (Join-Path $moduleRoot "Utilities.ps1")
@@ -31,7 +31,7 @@ $reader = New-Object System.Xml.XmlNodeReader $xaml
 try {
     $window = [Windows.Markup.XamlReader]::Load($reader)
 }
-catch {
+catch {5
     Write-Error "Error parsing XAML: $($_.Exception.Message)"
     exit 1
 }
@@ -181,7 +181,7 @@ $btnDownload.Add_Click({
     }
 })
 
-Add-Log "Ready. Paste a link. (YT/Insta/FB auto-install engine)."
+Add-Log "Ready. Paste a link. (TikTok/Youtube/Instagram/Facebook auto-install engine)."
 
 try {
     $null = $window.ShowDialog()
