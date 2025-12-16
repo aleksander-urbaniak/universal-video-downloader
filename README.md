@@ -67,5 +67,3 @@ Universal Video Downloader is a Windows PowerShell 5.1 script with a modern WPF 
 ## Notes 📝
 
 * The script auto-installs yt-dlp into a temporary folder and cleans it up after use.
-* Manual UI testing is recommended for verifying layout and theme changes.
-  src/Downloade
