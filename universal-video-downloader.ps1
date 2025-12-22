@@ -13,7 +13,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Net.Http
 
-$version = "v1.0.1"
+$version = "v1.0.2"
 $moduleRoot = Join-Path $PSScriptRoot "src"
 
 . (Join-Path $moduleRoot "Utilities.ps1")
@@ -31,7 +31,7 @@ $reader = New-Object System.Xml.XmlNodeReader $xaml
 try {
     $window = [Windows.Markup.XamlReader]::Load($reader)
 }
-catch {5
+catch {
     Write-Error "Error parsing XAML: $($_.Exception.Message)"
     exit 1
 }
@@ -41,6 +41,7 @@ $inputUrl    = $window.FindName("InputUrl")
 $inputPath   = $window.FindName("InputPath")
 $btnBrowse   = $window.FindName("BtnBrowse")
 $btnDownload = $window.FindName("BtnDownload")
+$btnStop     = $window.FindName("BtnStop")
 $txtStatus   = $window.FindName("TxtStatus")
 $txtProgress = $window.FindName("TxtProgressDetails")
 $prgBar      = $window.FindName("PrgBar")
@@ -51,10 +52,40 @@ $logScroll   = $window.FindName("LogScroll")
 $btnCopyLog  = $window.FindName("BtnCopyLog")
 $btnClearLog = $window.FindName("BtnClearLog")
 
+# New UI Controls
+$chkAudioOnly     = $window.FindName("ChkAudioOnly")
+$comboRes         = $window.FindName("ComboResolution")
+$comboAudioFormat = $window.FindName("ComboAudioFormat")
+
 $inputPath.Text = [Environment]::GetFolderPath("Desktop")
 if ($txtVersion) { $txtVersion.Text = $version }
 
 Initialize-Logging -LogPanel $logPanel -LogScroll $logScroll
+
+# --- UI LOGIC EVENTS ---
+
+$updateUiState = {
+    $url = $inputUrl.Text
+    $isAudio = $chkAudioOnly.IsChecked
+    
+    # Simple regex for YouTube domain
+    $isYoutube = $url -match 'https?://(www\.)?(youtube\.com|youtu\.be)'
+
+    # Resolution Visibility: Show only if YouTube AND Not Audio Only
+    if ($isYoutube -and -not $isAudio) {
+        $comboRes.Visibility = "Visible"
+    } else {
+        $comboRes.Visibility = "Collapsed"
+    }
+
+    # Audio Format Enable/Disable
+    $comboAudioFormat.IsEnabled = $isAudio
+}
+
+$inputUrl.Add_TextChanged($updateUiState)
+$chkAudioOnly.Add_Click($updateUiState)
+
+# -----------------------
 
 $global:isDarkMode = $false
 
@@ -110,9 +141,21 @@ $btnBrowse.Add_Click({
     }
 })
 
+$btnStop.Add_Click({
+    Request-Cancellation
+    $txtStatus.Text = "Stopping..."
+    $btnStop.IsEnabled = $false
+    Add-Log "Stopping download..."
+})
+
 $btnDownload.Add_Click({
     $rawUrl  = $inputUrl.Text
     $saveDir = $inputPath.Text
+    
+    # Get Options
+    $isAudioOnly = $chkAudioOnly.IsChecked
+    $selectedRes = $comboRes.Text
+    $selectedFmt = $comboAudioFormat.Text
 
     if ([string]::IsNullOrWhiteSpace($rawUrl)) {
         Show-Err "Please enter a URL."
@@ -123,9 +166,13 @@ $btnDownload.Add_Click({
         return
     }
 
+    # UI State: Running
     $btnDownload.IsEnabled = $false
+    $btnStop.IsEnabled = $true
     $btnDownload.Content = "Processing..."
     $txtStatus.Text = "Working..."
+    Reset-Cancellation
+    
     Add-Log "Starting process..."
     [System.Windows.Forms.Application]::DoEvents()
 
@@ -135,7 +182,13 @@ $btnDownload.Add_Click({
 
         if ($urlHost -match "youtube.com" -or $urlHost -match "youtu.be" -or $urlHost -match "instagram.com" -or $urlHost -match "facebook.com" -or $urlHost -match "fb.watch") {
             Add-Log "Detected link for native engine."
-            Download-Native-YtDlp -Url $uri.AbsoluteUri -SaveDir $saveDir -ProgressBar $prgBar -StatusBlock $txtStatus -ProgressDetails $txtProgress
+            
+            $resToPass = "Best"
+            if (($urlHost -match "youtube.com" -or $urlHost -match "youtu.be") -and -not $isAudioOnly) {
+                $resToPass = $selectedRes
+            }
+
+            Download-Native-YtDlp -Url $uri.AbsoluteUri -SaveDir $saveDir -ProgressBar $prgBar -StatusBlock $txtStatus -ProgressDetails $txtProgress -AudioOnly $isAudioOnly -Resolution $resToPass -AudioFormat $selectedFmt
 
             Cleanup-Environment
             Add-Log "Engine files cleaned up."
@@ -143,7 +196,7 @@ $btnDownload.Add_Click({
             $txtStatus.Text = "Ready"
             $txtProgress.Text = ""
             $prgBar.Value = 0
-            Add-Log "Success! Video downloaded."
+            Add-Log "Success! Download finished."
             Show-Info "Download finished." "Success"
         }
         else {
@@ -151,7 +204,7 @@ $btnDownload.Add_Click({
 
             if ($urlHost -match "tiktok.com") {
                 Add-Log "Detected TikTok link."
-                $downloadData = Download-TikTok -Url $uri.AbsoluteUri
+                $downloadData = Download-TikTok -Url $uri.AbsoluteUri -AudioOnly $isAudioOnly
             }
             else {
                 Add-Log "Unknown platform. Trying direct download..."
@@ -161,7 +214,7 @@ $btnDownload.Add_Click({
             $fullPath = Join-Path -Path $saveDir -ChildPath $downloadData.fileName
             Add-Log "Downloading to: $fullPath"
 
-            Download-File-WithProgress -Url $downloadData.url -Path $fullPath -Headers $downloadData.headers -LogName "Video" -ProgressBar $prgBar -StatusBlock $txtStatus -ProgressDetails $txtProgress
+            Download-File-WithProgress -Url $downloadData.url -Path $fullPath -Headers $downloadData.headers -LogName "File" -ProgressBar $prgBar -StatusBlock $txtStatus -ProgressDetails $txtProgress
 
             $txtStatus.Text = "Ready"
             Add-Log "Success! File saved."
@@ -169,14 +222,22 @@ $btnDownload.Add_Click({
         }
     }
     catch {
-        $txtStatus.Text = "Error"
+        if ($_.Exception.Message -eq "Download cancelled.") {
+            Add-Log "Process Stopped by User."
+            $txtStatus.Text = "Stopped"
+        }
+        else {
+            $txtStatus.Text = "Error"
+            Add-Log "Error: $($_.Exception.Message)"
+            Show-Err "Error: $($_.Exception.Message)"
+        }
         $txtProgress.Text = ""
-        Add-Log "Error: $($_.Exception.Message)"
-        Show-Err "Error: $($_.Exception.Message)"
     }
     finally {
+        # UI State: Reset
         $btnDownload.IsEnabled = $true
-        $btnDownload.Content = "Download Video"
+        $btnStop.IsEnabled = $false
+        $btnDownload.Content = "Download"
         $prgBar.Value = 0
     }
 })
